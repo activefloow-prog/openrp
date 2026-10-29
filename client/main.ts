@@ -7,6 +7,8 @@ import '@fontsource/barlow-condensed/500.css';
 import '@fontsource/barlow-condensed/600.css';
 import '@fontsource/barlow-condensed/800.css';
 import './style.css';
+import './follow-camera.css';
+import './sitolume-directory.css';
 import { City } from './world.ts';
 import {
   disposeObject,
@@ -23,6 +25,7 @@ import { UI, type AimTarget } from './ui.ts';
 import { EYE_HEIGHT, JOBS, PROPS, PROTOCOL, TICK_RATE, WEAPONS, entitySize } from '../shared/catalog.ts';
 import { BLOCKS, doorBox } from '../shared/map.ts';
 import { direction, idleInput, movePlayer, rayBox } from '../shared/movement.ts';
+import { followCameraAim, followCameraPosition } from './follow-camera.ts';
 import { applyDelta } from '../shared/replication.ts';
 import type {
   Box,
@@ -101,6 +104,31 @@ let mouseDown = false,
 let fallbackActive = false,
   fallbackDrag = false;
 const cameraPos = new THREE.Vector3(0, EYE_HEIGHT, 24);
+const followSmooth = new THREE.Vector3(0, EYE_HEIGHT + 1.2, 28);
+let thirdPerson = true;
+let localAvatar: Avatar | undefined;
+const cameraModeButton = document.createElement('button');
+cameraModeButton.id = 'camera-toggle';
+cameraModeButton.type = 'button';
+cameraModeButton.textContent = '◉ TERZA PERSONA  [B]';
+cameraModeButton.setAttribute('aria-label', 'Cambia visuale in prima o terza persona');
+cameraModeButton.hidden = true;
+document.body.append(cameraModeButton);
+function toggleCamera(): void {
+  thirdPerson = !thirdPerson;
+  cameraModeButton.textContent = thirdPerson ? '◉ TERZA PERSONA  [B]' : '◉ PRIMA PERSONA  [B]';
+  followSmooth.copy(cameraPos);
+}
+cameraModeButton.addEventListener('click', toggleCamera);
+const directory = document.createElement('nav');
+directory.id = 'sitolume-directory';
+directory.hidden = true;
+directory.setAttribute('aria-label', 'Negozi e servizi SitoLume');
+directory.innerHTML = `<b>✦ NEGOZI DELLA CITTÀ</b>
+<small>Versione pilota: le attività elencate sono collegamenti reali. I negozi virtuali acquistabili e le Lume Coin non sono ancora disponibili.</small>
+<a href="https://activefloow-prog.github.io/sitolume-studio/" target="_blank" rel="noopener noreferrer">▣ SitoLume Studio ↗</a>
+<a href="https://payhip.com/nicostudioai" target="_blank" rel="noopener noreferrer">◈ Nico Lab ↗</a>`;
+document.body.append(directory);
 const beamGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
 const beam = new THREE.Line(
   beamGeo,
@@ -345,6 +373,10 @@ ui.onConnect = (name, password, account = false) => {
     pending = [];
     for (const a of avatars.values()) disposeObject(a.root);
     avatars.clear();
+    if (localAvatar) {
+      disposeObject(localAvatar.root);
+      localAvatar = undefined;
+    }
     for (const e of entityVisuals.values()) disposeObject(e);
     entityVisuals.clear();
     beam.visible = false;
@@ -384,6 +416,13 @@ function receiveState(snapshot: Snapshot): void {
   }
   state = snapshot;
   me = p;
+  if (!localAvatar || localAvatar.job !== p.job) {
+    if (localAvatar) disposeObject(localAvatar.root);
+    localAvatar = makeAvatar(p);
+    localAvatar.root.position.set(p.x, p.y, p.z);
+    localAvatar.last.copy(localAvatar.root.position);
+    scene.add(localAvatar.root);
+  }
   voice.updateWorld(p, snapshot.players);
   clockOffset = snapshot.time - Date.now() + ping / 2;
   pending = pending.filter((i) => i.seq > p.seq);
@@ -397,6 +436,7 @@ function receiveState(snapshot: Snapshot): void {
     cameraPos.distanceTo(new THREE.Vector3(predicted.x, predicted.y + EYE_HEIGHT, predicted.z)) > 4
   )
     cameraPos.set(predicted.x, predicted.y + (p.crouch ? 1.02 : EYE_HEIGHT), predicted.z);
+  if (first) followSmooth.copy(cameraPos);
   if (p.health < lastHealth && !first) {
     document.body.classList.add('hurt');
     setTimeout(() => document.body.classList.remove('hurt'), 240);
@@ -455,7 +495,8 @@ function makeInput(): Input {
 }
 function aim(): AimTarget | undefined {
   if (!state || !me || me.deadUntil) return;
-  const origin = camera.position,
+  // Interaction rays originate at the avatar's eyes, not from behind a wall.
+  const origin = cameraPos,
     dir = direction(yaw, pitch),
     maxRange = ['physgun', 'toolgun'].includes(me.weapon) ? 12 : 3.4;
   let nearest = maxRange,
@@ -567,6 +608,11 @@ document.addEventListener('keydown', (event) => {
     return;
   }
   if (!ui.playing || !me || ui.menu) return;
+  if (event.code === 'KeyB') {
+    event.preventDefault();
+    toggleCamera();
+    return;
+  }
   if (event.code === 'KeyY' || event.code === 'Enter') {
     event.preventDefault();
     ui.openChat();
@@ -723,8 +769,29 @@ function frame(now: number): void {
       predicted.z,
     );
     cameraPos.lerp(targetCamera, 1 - Math.exp(-25 * dt));
-    camera.position.copy(cameraPos);
-    camera.rotation.set(pitch, yaw, 0, 'YXZ');
+    if (localAvatar) {
+      updateAvatar(
+        localAvatar,
+        { ...me, x: predicted.x, y: predicted.y, z: predicted.z, yaw, pitch },
+        dt,
+        cameraPos,
+        serverNow(),
+        colliders,
+      );
+      localAvatar.root.visible = thirdPerson && !me.deadUntil;
+      localAvatar.label.visible = false;
+    }
+    if (thirdPerson) {
+      const targetFollow = followCameraPosition(cameraPos, yaw, colliders());
+      followSmooth.lerp(targetFollow, 1 - Math.exp(-13 * dt));
+      camera.position.copy(followSmooth);
+      camera.lookAt(followCameraAim(cameraPos, yaw, pitch));
+    } else {
+      camera.position.copy(cameraPos);
+      camera.rotation.set(pitch, yaw, 0, 'YXZ');
+    }
+    cameraModeButton.hidden = false;
+    directory.hidden = false;
     for (const e of state.entities) {
       const visual = entityVisuals.get(e.id);
       if (visual) {
@@ -788,6 +855,8 @@ function frame(now: number): void {
     accumulator = 0;
     camera.position.set(8.5 + Math.sin(elapsed * 0.045) * 0.9, 4.7, 28);
     camera.lookAt(-4, 3, -12);
+    cameraModeButton.hidden = true;
+    directory.hidden = true;
   }
   for (let i = shotLines.length - 1; i >= 0; i--)
     if (shotLines[i].until <= now) {
@@ -800,7 +869,7 @@ function frame(now: number): void {
   renderer.info.reset();
   renderer.autoClear = true;
   renderer.render(scene, camera);
-  if (ui.playing && me && !me.deadUntil && !ui.menu && !ui.chatOpen) {
+  if (ui.playing && me && !me.deadUntil && !ui.menu && !ui.chatOpen && !thirdPerson) {
     renderer.autoClear = false;
     renderer.clearDepth();
     renderer.render(viewScene, viewCamera);

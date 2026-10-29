@@ -64,7 +64,7 @@ export class UI {
   playing = false;
   chatOpen = false;
   settings: Settings;
-  serverName = 'OpenRP | Union District';
+  serverName = 'SitoLume City | Beta';
   lastMenuKey = '';
   username?: string;
   accountBusy = false;
@@ -107,11 +107,11 @@ export class UI {
       <div class="film-grain" aria-hidden="true"></div>
       <section id="entry" class="entry">
         <header class="entry-header"><div class="brandmark">R<span>●</span></div><div class="entry-edition">OPEN SOURCE<br><b>CITY ROLEPLAY</b></div><div class="version">ALPHA ${VERSION}</div></header>
-        <div class="entry-panel"><div class="eyebrow"><span class="status-dot"></span> UNION DISTRICT / MULTIPLAYER</div><h1>OPEN<span>RP</span><span class="title-period">.</span></h1><p class="entry-tagline">Another city. Your own story.</p><p class="entry-free">FREE TO PLAY · NO DOWNLOAD · PUBLIC ALPHA</p>
+        <div class="entry-panel"><div class="eyebrow"><span class="status-dot"></span> SITOLUME CITY / TEST MULTIPLAYER</div><h1>SITO<span>LUME</span><span class="title-period">.</span></h1><p class="entry-tagline">Una città. Persone, negozi e nuove idee.</p><p class="entry-free">PROTOTIPO GRATUITO · NESSUN PAGAMENTO ATTIVO</p>
           <div class="entry-rule"></div><div class="entry-tabs"><button data-action="entry-login" aria-pressed="true">Sign in</button><button data-action="entry-register" aria-pressed="false">Create account</button><button data-action="entry-guest" aria-pressed="false">Guest</button></div><div id="password-row" hidden><label class="field-label" for="server-password">SERVER PASSWORD</label><input id="server-password" type="password" autocomplete="current-password"></div><div id="account-content">${this.accountForm('login', 'entry')}</div><form id="join-form" hidden><label class="field-label" for="player-name">YOUR ROLEPLAY NAME</label><input id="player-name" name="name" minlength="2" maxlength="24" required autocomplete="nickname" placeholder="Choose a name" value="${escape(localStorage.getItem('openrp-name') ?? '')}"><button id="join-button" class="primary join-button" type="submit"><span>Enter as guest</span><span>↗</span></button><p class="account-help">Create an account later to keep this guest's belongings across browsers.</p></form>
           <p class="entry-consent">By joining, follow the <a href="/rules.html" target="_blank" rel="noopener">community rules</a>. Text chat is logged. <a href="/rules.html#privacy" target="_blank" rel="noopener">Privacy</a> · <a href="https://github.com/DevanMetz/openrp" target="_blank" rel="noopener">Source</a></p><p id="join-status" class="entry-status" role="status">Connecting to the district…</p><div class="entry-options"><button data-menu="help">How to play <span>↗</span></button><button data-menu="settings">Settings <span>⚙</span></button></div>
         </div>
-        <div class="entry-location"><span class="location-line"></span><span>01 / UNION SQUARE<small>A city with room for you.</small></span></div>
+        <div class="entry-location"><span class="location-line"></span><span>01 / PIAZZA LUME<small>La tua città, il nostro prossimo progetto.</small></span></div>
         <footer class="entry-footer"><span>JOBS. PROPERTY. PHYSICS. POSSIBILITIES.</span><span>DESKTOP · KEYBOARD & MOUSE</span></footer>
       </section>
       <div id="hud" hidden>
@@ -130,7 +130,7 @@ export class UI {
         <div id="weapon-strip"></div><div id="chat" class="chat"><div id="chat-lines" aria-live="polite"></div><form id="chat-form" hidden><span id="chat-channel">LOCAL</span><input id="chat-input" maxlength="240" autocomplete="off" aria-label="Chat message" placeholder="Message nearby players, or /ooc for everyone"><kbd>↵</kbd></form></div>
         <div id="death" hidden></div><div id="damage" aria-hidden="true"></div>
       </div>
-      <div id="overlay" class="overlay" hidden><section class="modal" role="dialog" aria-modal="true" aria-label="Game menu"><header class="modal-top"><div class="mini-brand">OPEN<span>RP</span></div><span id="modal-subtitle">UNION DISTRICT</span><button id="close-menu" class="close-button" aria-label="Close menu">✕ <kbd>ESC</kbd></button></header><div class="modal-body"><nav id="menu-nav"></nav><main id="menu-content" tabindex="0" aria-label="Menu content"></main></div><footer class="modal-footer"><span id="menu-footer">Your city. Your rules.</span><span>OPENRP ${VERSION}</span></footer></section></div>
+      <div id="overlay" class="overlay" hidden><section class="modal" role="dialog" aria-modal="true" aria-label="Game menu"><header class="modal-top"><div class="mini-brand">SITO<span>LUME</span></div><span id="modal-subtitle">CITY BETA</span><button id="close-menu" class="close-button" aria-label="Close menu">✕ <kbd>ESC</kbd></button></header><div class="modal-body"><nav id="menu-nav"></nav><main id="menu-content" tabindex="0" aria-label="Menu content"></main></div><footer class="modal-footer"><span id="menu-footer">Your city. Your rules.</span><span>OPENRP ${VERSION}</span></footer></section></div>
       <div class="hud-feed">
         <button id="contract-hud" class="contract-hud" data-menu="contracts" hidden aria-label="Open active contract"><span class="eyebrow">ACTIVE CONTRACT</span><strong id="contract-hud-target"></strong><span id="contract-hud-detail"></span><small>F4 → Contracts for details</small></button>
         <div id="notices" aria-live="polite"></div>

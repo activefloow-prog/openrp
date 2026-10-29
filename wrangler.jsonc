@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "openrp",
+  "name": "sitolume-city-alpha",
   "main": "server/worker.ts",
   "compatibility_date": "2026-10-19",
   "compatibility_flags": ["nodejs_compat"],
@@ -13,16 +13,13 @@
   "observability": { "enabled": true, "traces": { "enabled": true } },
   "durable_objects": { "bindings": [{ "name": "WORLD", "class_name": "World" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["World"] }],
-  "routes": [
-    { "pattern": "openrp.dev", "custom_domain": true },
-    { "pattern": "www.openrp.dev", "custom_domain": true },
-  ],
+  "routes": [],
   "vars": {
-    "SERVER_NAME": "OpenRP | Union District",
+    "SERVER_NAME": "SitoLume City | Beta",
     "STARTING_MONEY": "1500",
     "SALARY_SECONDS": "60",
     "JAIL_SECONDS": "60",
     "LOG_RETENTION_DAYS": "30",
-    "ALLOWED_ORIGINS": "https://openrp.dev,https://www.openrp.dev",
+    "ALLOWED_ORIGINS": "",
   },
 }

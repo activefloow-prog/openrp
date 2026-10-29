@@ -1,0 +1,37 @@
+
+/* SitoLume City pilot: warm copper storefront directory (links, not virtual purchases). */
+:root { --accent:#d6ac83; --muted:#b9b1a7; --panel:#282a29; color-scheme:dark; }
+#sitolume-directory {
+  position: fixed;
+  z-index: 11;
+  left: 1rem;
+  top: 4.9rem;
+  width: min(245px, calc(100vw - 2rem));
+  padding: 0.95rem;
+  color: #fff2df;
+  background: #292422ed;
+  border: 1px solid #b98764;
+  border-radius: 0.8rem;
+  box-shadow: 0 8px 24px #17110d9c;
+  backdrop-filter: blur(15px);
+}
+#sitolume-directory b { letter-spacing: .08em; font-size: .9rem; }
+#sitolume-directory small { display: block; margin: .45rem 0 .8rem; color:#f0d4b2; font-size: .7rem; line-height: 1.45; }
+#sitolume-directory a {
+  display: block;
+  text-decoration: none;
+  margin-top: .4rem;
+  padding: .65rem .7rem;
+  font-size: .8rem;
+  color: #f9eddb;
+  background: #443830;
+  border: 1px solid #8d7459;
+  border-radius: .4rem;
+}
+#sitolume-directory a:hover { background: #74503d; }
+#sitolume-directory[hidden] {display:none!important}
+@media (max-width: 720px) {
+  #sitolume-directory {top:auto;bottom:5.7rem;width:180px;padding:.55rem}
+  #sitolume-directory a {font-size:.7rem;padding:.5rem}
+  #sitolume-directory small {font-size:.62rem}
+}

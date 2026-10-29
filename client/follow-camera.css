@@ -1,0 +1,21 @@
+/* SitoLume City: third-person camera control. The original game remains MIT licensed. */
+#camera-toggle {
+  position: fixed;
+  z-index: 12;
+  right: 1.2rem;
+  top: 5rem;
+  background: #203e35ed;
+  color: #f7efe0;
+  border: 1px solid #d6b482;
+  border-radius: 0.65rem;
+  padding: 0.7rem 0.95rem;
+  font-size: 0.79rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  box-shadow: 0 4px 18px #0005;
+  cursor: pointer;
+}
+#camera-toggle:hover { background: #336050; }
+#camera-toggle:focus-visible { outline: 2px solid #d6b482; outline-offset: 3px; }
+#camera-toggle[hidden] { display: none !important; }
+@media (max-width: 680px) { #camera-toggle { right: 0.65rem; top: 4rem; font-size: 0.7rem; padding: 0.6rem; } }

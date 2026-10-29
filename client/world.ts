@@ -1066,7 +1066,7 @@ export class City {
     }
     // Street signage and overhead tram wiring give the square a lived-in scale.
     this.box(11.7, 1.9, -5.7, 0.08, 3.8, 0.08, 'metal');
-    this.sign('UNION SQUARE', 11.7, 3.55, -5.62, 2.5, 0.4, '#344d48', 0, 'bold 80px sans-serif');
+    this.sign('PIAZZA LUME', 11.7, 3.55, -5.62, 2.5, 0.4, '#685342', 0, 'bold 80px sans-serif');
     this.sign('← CIVIL PROTECTION', 11.7, 3.04, -5.62, 2.5, 0.32, '#344d48', 0, 'bold 65px sans-serif');
     for (const z of [-24, 27, 51]) {
       const points: THREE.Vector3[] = [];
@@ -1095,7 +1095,7 @@ export class City {
     this.car(-10, -20, '#596b66', 0);
     this.car(11.5, 38, '#8e8470', Math.PI);
     this.car(8.5, -29, '#46545c', Math.PI / 2);
-    this.sign('UNION DISTRICT', 0, 4.6, 69, 12, 1.15, '#485a57', Math.PI, 'bold 72px Georgia');
+    this.sign('SITOLUME CITY', 0, 4.6, 69, 12, 1.15, '#685342', Math.PI, 'bold 72px Georgia');
     for (const x of [-6.4, 6.4]) this.box(x, 2.4, 69.2, 0.4, 4.8, 0.4, 'metal');
   }
   tree(x: number, z: number): void {
