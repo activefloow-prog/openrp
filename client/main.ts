@@ -9,6 +9,8 @@ import '@fontsource/barlow-condensed/800.css';
 import './style.css';
 import './follow-camera.css';
 import './sitolume-directory.css';
+import './guest-entry.css';
+import { guestDisplayName } from './guest-entry.ts';
 import { City } from './world.ts';
 import {
   disposeObject,
@@ -172,7 +174,11 @@ function releaseControls(): void {
   if (locked()) document.exitPointerLock();
   if (me) send({ type: 'input', input: { ...idleInput(), seq: ++seq, yaw, pitch } });
 }
-ui.onResume = lock;
+// A browser pointer-lock prompt is not required to start walking the city.
+ui.onResume = () => {
+  fallbackActive = true;
+  keys.clear();
+};
 ui.onMenu = releaseControls;
 ui.onAction = (name, target, value) => {
   action(name, target, value);
@@ -317,9 +323,9 @@ ui.onConnect = (name, password, account = false) => {
       ui.connected();
       connectedAt = performance.now();
       yaw = pitch = 0;
-      // This asynchronous callback cannot rely on a browser user activation.
-      ui.open('pause');
-      ui.notice('Connected. Click Return to the streets to start playing.');
+      // Enter directly into the city. Keyboard controls work without pointer-lock permission.
+      fallbackActive = true;
+      ui.notice('Sei nella città! WASD o frecce per camminare. Tasto B per cambiare visuale.');
     } else if (msg.type === 'state') receiveState(msg);
     else if (msg.type === 'delta' && state) receiveState(applyDelta(state, msg));
     else if (msg.type === 'pong') ping = Math.round(Date.now() - msg.time);
@@ -382,9 +388,11 @@ ui.onConnect = (name, password, account = false) => {
     beam.visible = false;
   });
   ws.addEventListener('error', () => {
-    rejection ||= 'Could not reach the server. Check the address and try again.';
+    rejection ||= 'Impossibile collegarsi al server. Riprova dal pulsante Entra subito.';
   });
 };
+// One click, no nickname form, email, password or account registration.
+ui.onQuickGuest = () => ui.onConnect(guestDisplayName(localStorage), '');
 function entityBox(e: Entity): Box {
   const [w, h, d] = entitySize(e.kind),
     m = new THREE.Matrix4().makeRotationFromQuaternion(
@@ -484,7 +492,7 @@ function makeInput(): Input {
   const active = controlsActive() && !ui.menu && !ui.chatOpen && me && !me.deadUntil;
   return {
     seq: ++seq,
-    forward: active ? (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0) : 0,
+    forward: active ? (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0) : 0,
     right: active ? (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0) : 0,
     yaw,
     pitch,
@@ -619,7 +627,7 @@ document.addEventListener('keydown', (event) => {
     return;
   }
   if (!controlsActive()) return;
-  if (['Space', 'ControlLeft', 'ControlRight'].includes(event.code)) event.preventDefault();
+  if (['Space', 'ControlLeft', 'ControlRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) event.preventDefault();
   keys.add(event.code);
   if (event.code === 'KeyV') {
     event.preventDefault();
@@ -710,9 +718,13 @@ document.addEventListener(
   { passive: false },
 );
 window.addEventListener('blur', releaseControls);
+window.addEventListener('focus', () => {
+  if (ui.playing && !ui.menu && !ui.chatOpen) fallbackActive = true;
+});
 window.addEventListener('pagehide', () => voice.disconnect());
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) releaseControls();
+  else if (ui.playing && !ui.menu && !ui.chatOpen) fallbackActive = true;
 });
 window.addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
@@ -735,6 +747,10 @@ function frame(now: number): void {
   accumulator = Math.min(accumulator + dt, 0.12);
   hudTimer += dt;
   if (me && state && ui.playing) {
+    if (controlsActive() && !ui.menu && !ui.chatOpen && !locked()) {
+      if (keys.has('ArrowLeft')) yaw += dt * 1.7;
+      if (keys.has('ArrowRight')) yaw -= dt * 1.7;
+    }
     while (accumulator >= 1 / TICK_RATE) {
       accumulator -= 1 / TICK_RATE;
       const input = makeInput();

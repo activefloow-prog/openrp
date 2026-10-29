@@ -81,6 +81,7 @@ export class UI {
   private menuOpener?: HTMLElement;
   onVoice: (command: 'mic' | 'deafen' | 'mute', id?: string) => void = () => {};
   onConnect: (name: string, password: string, account?: boolean) => void = () => {};
+  onQuickGuest: () => void = () => {};
   onAccount: (action: 'login' | 'register', username: string, password: string) => void = () => {};
   onSignOut: () => void = () => {};
   onAction: (action: string, target?: string, value?: string | number | boolean) => void = () => {};
@@ -108,7 +109,14 @@ export class UI {
       <section id="entry" class="entry">
         <header class="entry-header"><div class="brandmark">R<span>●</span></div><div class="entry-edition">OPEN SOURCE<br><b>CITY ROLEPLAY</b></div><div class="version">ALPHA ${VERSION}</div></header>
         <div class="entry-panel"><div class="eyebrow"><span class="status-dot"></span> SITOLUME CITY / TEST MULTIPLAYER</div><h1>SITO<span>LUME</span><span class="title-period">.</span></h1><p class="entry-tagline">Una città. Persone, negozi e nuove idee.</p><p class="entry-free">PROTOTIPO GRATUITO · NESSUN PAGAMENTO ATTIVO</p>
-          <div class="entry-rule"></div><div class="entry-tabs"><button data-action="entry-login" aria-pressed="true">Sign in</button><button data-action="entry-register" aria-pressed="false">Create account</button><button data-action="entry-guest" aria-pressed="false">Guest</button></div><div id="password-row" hidden><label class="field-label" for="server-password">SERVER PASSWORD</label><input id="server-password" type="password" autocomplete="current-password"></div><div id="account-content">${this.accountForm('login', 'entry')}</div><form id="join-form" hidden><label class="field-label" for="player-name">YOUR ROLEPLAY NAME</label><input id="player-name" name="name" minlength="2" maxlength="24" required autocomplete="nickname" placeholder="Choose a name" value="${escape(localStorage.getItem('openrp-name') ?? '')}"><button id="join-button" class="primary join-button" type="submit"><span>Enter as guest</span><span>↗</span></button><p class="account-help">Create an account later to keep this guest's belongings across browsers.</p></form>
+          <div class="entry-rule"></div>
+          <div id="quick-entry-area">
+            <button id="quick-entry" class="primary join-button" type="button" data-action="quick-entry"><span>ENTRA SUBITO · SENZA ACCOUNT</span><span>↗</span></button>
+            <p class="entry-guest-info">Un clic per entrare direttamente in città. Il tuo personaggio ospite viene creato automaticamente e si ritrova sullo stesso browser.</p>
+            <button class="entry-account-link" type="button" data-action="show-account">Hai già un account? Accedi qui</button>
+          </div>
+          <div id="entry-advanced" hidden><button class="entry-account-back" type="button" data-action="show-quick">← Entra senza account</button>
+          <div class="entry-tabs"><button data-action="entry-login" aria-pressed="true">Sign in</button><button data-action="entry-register" aria-pressed="false">Create account</button><button data-action="entry-guest" aria-pressed="false">Guest</button></div><div id="password-row" hidden><label class="field-label" for="server-password">SERVER PASSWORD</label><input id="server-password" type="password" autocomplete="current-password"></div><div id="account-content">${this.accountForm('login', 'entry')}</div><form id="join-form" hidden><label class="field-label" for="player-name">YOUR ROLEPLAY NAME</label><input id="player-name" name="name" minlength="2" maxlength="24" required autocomplete="nickname" placeholder="Choose a name" value="${escape(localStorage.getItem('openrp-name') ?? '')}"><button id="join-button" class="primary join-button" type="submit"><span>Enter as guest</span><span>↗</span></button><p class="account-help">Il profilo ospite rimane su questo browser. Per usarlo su più dispositivi crea un account in seguito.</p></form></div>
           <p class="entry-consent">By joining, follow the <a href="/rules.html" target="_blank" rel="noopener">community rules</a>. Text chat is logged. <a href="/rules.html#privacy" target="_blank" rel="noopener">Privacy</a> · <a href="https://github.com/DevanMetz/openrp" target="_blank" rel="noopener">Source</a></p><p id="join-status" class="entry-status" role="status">Connecting to the district…</p><div class="entry-options"><button data-menu="help">How to play <span>↗</span></button><button data-menu="settings">Settings <span>⚙</span></button></div>
         </div>
         <div class="entry-location"><span class="location-line"></span><span>01 / PIAZZA LUME<small>La tua città, il nostro prossimo progetto.</small></span></div>
@@ -240,6 +248,8 @@ export class UI {
     return `${action === 'login' && saved && localStorage.getItem('openrp-account-token') ? `<button class="account-resume" data-action="account-resume">Continue as ${escape(saved)} ↗</button>` : ''}<form class="account-form" data-account="${action}"><label class="field-label" for="account-${scope}-username">USERNAME</label><input id="account-${scope}-username" name="username" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9][A-Za-z0-9_.\\-]{2,23}" required placeholder="Your username" value="${escape(action === 'login' ? (saved ?? '') : '')}"><label class="field-label" for="account-${scope}-password">PASSWORD</label><input id="account-${scope}-password" name="password" type="password" autocomplete="${action === 'register' ? 'new-password' : 'current-password'}" minlength="15" maxlength="128" required placeholder="${action === 'register' ? 'A passphrase of 15+ characters' : 'Your password'}"><p class="account-help">${action === 'register' ? 'Only a username and password. Your current guest’s belongings come with you.' : 'Restore your inventory, props and properties on any browser.'}</p><button class="primary join-button" type="submit" ${this.accountBusy ? 'disabled' : ''}>${action === 'register' ? 'Create account & enter' : 'Sign in'} <span>↗</span></button></form>`;
   }
   entryMode(mode: 'login' | 'register' | 'guest'): void {
+    this.el('entry-advanced').hidden = false;
+    this.el('quick-entry-area').hidden = true;
     this.el('join-form').hidden = mode !== 'guest';
     this.el('account-content').hidden = mode === 'guest';
     if (mode !== 'guest') this.el('account-content').innerHTML = this.accountForm(mode, 'entry');
@@ -262,6 +272,7 @@ export class UI {
   status(text: string, busy = false): void {
     this.text('join-status', text);
     (this.el('join-button') as HTMLButtonElement).disabled = busy;
+    (this.el('quick-entry') as HTMLButtonElement).disabled = busy;
     this.setAccountBusy(busy);
   }
   connected(): void {
@@ -862,6 +873,19 @@ export class UI {
       <div class="context-actions">${target.id !== p.id ? `<button data-action="direct-message" data-target="${id}">Message ${escape(target.name)}</button>` : ''}<button data-menu="players">Back to players</button><button class="voice-mute" data-action="voice-mute" data-target="${id}">Mute</button><small data-voice-speaker="${id}"></small></div>`;
   }
   clickAction(action: string, target: string, value?: string): void {
+    if (action === 'quick-entry') {
+      this.onQuickGuest();
+      return;
+    }
+    if (action === 'show-account') {
+      this.entryMode('login');
+      return;
+    }
+    if (action === 'show-quick') {
+      this.el('entry-advanced').hidden = true;
+      this.el('quick-entry-area').hidden = false;
+      return;
+    }
     if (action === 'entry-login' || action === 'entry-register' || action === 'entry-guest') {
       this.entryMode(action.slice(6) as 'login' | 'register' | 'guest');
       return;
