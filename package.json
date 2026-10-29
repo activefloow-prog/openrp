@@ -10,6 +10,7 @@
   },
   "scripts": {
     "dev": "node --import tsx scripts/dev.ts",
+    "prebuild": "node scripts/fetch-humanoids.mjs",
     "build": "vite build",
     "start": "wrangler dev",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.worker.json",

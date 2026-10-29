@@ -1,0 +1,20 @@
+SITOLUME CITY — MODELLI UMANOIDI 3D
+
+Fonte originale: Quaternius (quaternius.com)
+Archivio pubblico: https://github.com/agentkaerf/FreeModels
+Commit sorgente bloccato: db3df04d1e4714298a09510b26fb6de6645138a2
+
+1. Ultimate Modular Men, febbraio 2022 — Casual_Hoodie.gltf
+2. Ultimate Modular Women, aprile 2022 — Casual.gltf
+
+Entrambi distribuiti con licenza CC0 1.0 Universal, dichiarata
+rispettivamente nei file License.txt di ciascun pacchetto sorgente.
+https://creativecommons.org/publicdomain/zero/1.0/
+
+I modelli e le 24 animazioni originarie sono di Quaternius:
+non sono modellati da SitoLume o ChatGPT.
+I file originali sono scaricati da scripts/fetch-humanoids.mjs
+con versione fissa e verifica SHA256 prima della distribuzione.
+
+Il codice che adatta i modelli al motore OpenRP resta nel
+repository SitoLume City sotto la licenza del progetto.

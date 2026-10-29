@@ -502,6 +502,24 @@ export class Game {
     };
     return this.trace(origin, dir, len, p.id, entity, door).t >= len - 0.15;
   }
+  /**
+   * Third-person-friendly item selection. Aim generally in front of an owned
+   * object, not at its exact centre. Never select through walls or across
+   * ownership boundaries.
+   */
+  nearestOwnedObject(p: Player, maxRange = INTERACT_RANGE): Entity | undefined {
+    const forward = direction(p.yaw, 0);
+    const candidates = [...this.entities.values()].filter(e => {
+      if (e.owner !== p.id || e.heldBy) return false;
+      const dx = e.x - p.x, dz = e.z - p.z;
+      const horizontal = Math.hypot(dx,dz);
+      if(horizontal > maxRange || horizontal < 0.2 || Math.abs(e.y-p.y)>2.5) return false;
+      const facing = (dx*forward.x+dz*forward.z) / horizontal;
+      return facing >= 0.28 && this.reachable(p,e,maxRange + 0.5,e.id);
+    });
+    candidates.sort((a,b)=>distance(p,a)-distance(p,b));
+    return candidates[0];
+  }
   handle(id: string, msg: ClientMessage): void {
     const p = this.players.get(id),
       r = this.runtime.get(id);
@@ -555,19 +573,21 @@ export class Game {
       case 'grab-near': {
         if (p.holding) break;
         const hit = this.trace(eyes(p), direction(p.yaw, p.pitch), 8, p.id);
-        if (hit.kind !== 'entity') {
+        const e = hit.kind === 'entity' && this.entities.get(hit.id!)?.owner === p.id
+          ? this.entities.get(hit.id!)
+          : this.nearestOwnedObject(p);
+        if (!e) {
           this.notice(p.id, 'Guarda un oggetto vicino per afferrarlo.', 'error');
           break;
         }
-        const e = this.entities.get(hit.id!)!;
-        if (e.owner !== p.id || e.heldBy) {
+        if (e.owner !== p.id || e.heldBy || !this.reachable(p,e,8,e.id)) {
           this.notice(p.id, 'Puoi spostare solo i tuoi oggetti liberi.', 'error');
           break;
         }
         this.freeze(e.id, false);
         p.holding = e.id;
         e.heldBy = p.id;
-        r.grabDistance = clamp(hit.t, 2, 8);
+        r.grabDistance = clamp(distance(eyes(p),e), 2, 8);
         this.notice(p.id, 'Oggetto afferrato. Cammina per spostarlo, poi premi Posa.', 'success');
         break;
       }
@@ -582,13 +602,15 @@ export class Game {
       }
       case 'collect-near': {
         const hit = this.trace(eyes(p), direction(p.yaw, p.pitch), INTERACT_RANGE, p.id);
-        if (hit.kind !== 'entity') {
-          this.notice(p.id, 'Guarda un oggetto vicino da mettere nello zaino.', 'error');
+        const item = hit.kind === 'entity' && this.entities.get(hit.id!)?.owner === p.id
+          ? this.entities.get(hit.id!)
+          : this.nearestOwnedObject(p);
+        if (!item) {
+          this.notice(p.id, 'Avvicinati a un tuo oggetto davanti al personaggio per raccoglierlo.', 'error');
           break;
         }
-        const item = this.entities.get(hit.id!);
-        if (item && item.owner === p.id && item.frozen && PROPS.some((v) => v.id === item.kind)) this.freeze(item.id, false);
-        this.storePocket(p,hit.id!);
+        if (item.owner === p.id && item.frozen && PROPS.some((v) => v.id === item.kind)) this.freeze(item.id, false);
+        this.storePocket(p,item.id);
         break;
       }
       case 'avatar':

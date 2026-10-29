@@ -15,6 +15,7 @@ import './city-drawer.css';
 import { installCityDrawer } from './city-drawer.ts';
 import { installAvatarPicker, readLook } from './avatar-picker.ts';
 import { installItalianUI } from './italian.ts';
+import { addProfessionalAvatar, updateProfessionalAvatar, clearProfessionalAvatar, professionalAvatarStatus } from './professional-avatar.ts';
 import { City } from './world.ts';
 import {
   disposeObject,
@@ -83,6 +84,7 @@ const models = new Map<WeaponId, THREE.Group>();
 const entityVisuals = new Map<string, THREE.Group>();
 const avatars = new Map<string, Avatar>();
 const keys = new Set<string>();
+let crouchToggle=false;
 let socket: WebSocket | undefined,
   myId = '',
   state: Snapshot | undefined,
@@ -283,6 +285,7 @@ ui.onConnect = (name, password, account = false) => {
   audio.setVolume(ui.settings.volume);
   ui.status('Joining the district…', true);
   if (!account) localStorage.setItem('openrp-name', name);
+  crouchToggle=false;
   seq = 0;
   pending = [];
   myId = '';
@@ -391,9 +394,10 @@ ui.onConnect = (name, password, account = false) => {
     state = undefined;
     me = undefined;
     pending = [];
-    for (const a of avatars.values()) disposeObject(a.root);
+    for (const a of avatars.values()) { clearProfessionalAvatar(a); disposeObject(a.root); }
     avatars.clear();
     if (localAvatar) {
+      clearProfessionalAvatar(localAvatar);
       disposeObject(localAvatar.root);
       localAvatar = undefined;
     }
@@ -444,6 +448,7 @@ function receiveState(snapshot: Snapshot): void {
     localAvatar.root.position.set(p.x, p.y, p.z);
     localAvatar.last.copy(localAvatar.root.position);
     scene.add(localAvatar.root);
+    void addProfessionalAvatar(localAvatar,p);
   }
   voice.updateWorld(p, snapshot.players);
   clockOffset = snapshot.time - Date.now() + ping / 2;
@@ -486,6 +491,7 @@ function receiveState(snapshot: Snapshot): void {
   const playerIds = new Set(snapshot.players.map((p) => p.id));
   for (const [id, a] of avatars)
     if (!playerIds.has(id)) {
+      clearProfessionalAvatar(a);
       disposeObject(a.root);
       avatars.delete(id);
     }
@@ -493,11 +499,12 @@ function receiveState(snapshot: Snapshot): void {
     if (other.id === myId) continue;
     let a = avatars.get(other.id);
     if (!a || a.appearanceKey !== `${other.job}:${other.avatarStyle ?? 'free'}:${other.avatarOutfit ?? 'sage'}`) {
-      if (a) disposeObject(a.root);
+      if (a) { clearProfessionalAvatar(a); disposeObject(a.root); }
       a = makeAvatar(other);
       a.root.position.set(other.x, other.y, other.z);
       avatars.set(other.id, a);
       scene.add(a.root);
+      void addProfessionalAvatar(a,other);
     }
   }
   if (first) ui.update(snapshot, p, ping);
@@ -512,7 +519,7 @@ function makeInput(): Input {
     pitch,
     jump: !!active && keys.has('Space'),
     sprint: !!active && (keys.has('ShiftLeft') || keys.has('ShiftRight')),
-    crouch: !!active && (keys.has('ControlLeft') || keys.has('ControlRight')),
+    crouch: !!active && (crouchToggle || keys.has('ControlLeft') || keys.has('ControlRight')),
   };
 }
 function aim(): AimTarget | undefined {
@@ -633,6 +640,12 @@ document.addEventListener('keydown', (event) => {
   if (event.code === 'KeyB') {
     event.preventDefault();
     toggleCamera();
+    return;
+  }
+  if (event.code === 'KeyX') {
+    event.preventDefault();
+    crouchToggle=!crouchToggle;
+    ui.notice(crouchToggle?'Personaggio accovacciato. Premi X per alzarti.':'Personaggio in piedi.');
     return;
   }
   if (event.code === 'KeyG') {
@@ -821,6 +834,7 @@ function frame(now: number): void {
       );
       localAvatar.root.visible = thirdPerson && !me.deadUntil;
       localAvatar.label.visible = false;
+      updateProfessionalAvatar(localAvatar,me,dt);
     }
     if (thirdPerson) {
       const targetFollow = followCameraPosition(cameraPos, yaw, colliders());
@@ -842,7 +856,10 @@ function frame(now: number): void {
     }
     for (const other of state.players) {
       const a = avatars.get(other.id);
-      if (a) updateAvatar(a, other, dt, cameraPos, serverNow(), colliders);
+      if (a) {
+        updateAvatar(a,other,dt,cameraPos,serverNow(),colliders);
+        updateProfessionalAvatar(a,other,dt);
+      }
     }
     if (hudTimer > 0.1) {
       hudTimer = 0;
@@ -931,5 +948,6 @@ if (import.meta.env.DEV)
       menu: ui.menu,
       entities: entityVisuals.size,
       avatars: avatars.size,
+      characterModel: professionalAvatarStatus(localAvatar),
     }),
   });

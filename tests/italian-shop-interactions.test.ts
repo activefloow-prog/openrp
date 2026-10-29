@@ -39,3 +39,18 @@ test('cannot grab another player owned object',()=>{
  assert.equal(game.entities.has(shelf.id),true);
  assert.equal(visitor.pocket?.length,0);
 });
+
+test('low floor object is selected without aiming camera downward',()=>{
+ const {game,owner,act}=setup();
+ const low=game.createEntity('pallet',owner.id,{x:0,y:0.11,z:-2.5});
+ // Remove the eye-height shelf so only the floor-level object is nearby.
+ for(const [id,e] of game.entities)if(e.kind==='shelf')game.removeEntity(id);
+ owner.pitch=0;
+ act(owner,'grab-near');
+ assert.equal(owner.holding,low.id,'front-facing low pallet should be grabbed without downward camera aiming');
+ act(owner,'place-near');
+ assert.equal(game.entities.get(low.id)?.frozen,true);
+ act(owner,'collect-near');
+ assert.equal(game.entities.has(low.id),false);
+ assert.equal(owner.pocket?.some(e=>e.kind==='pallet'),true);
+});
