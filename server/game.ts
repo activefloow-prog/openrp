@@ -552,6 +552,45 @@ export class Game {
       return;
     }
     switch (msg.action) {
+      case 'grab-near': {
+        if (p.holding) break;
+        const hit = this.trace(eyes(p), direction(p.yaw, p.pitch), 8, p.id);
+        if (hit.kind !== 'entity') {
+          this.notice(p.id, 'Guarda un oggetto vicino per afferrarlo.', 'error');
+          break;
+        }
+        const e = this.entities.get(hit.id!)!;
+        if (e.owner !== p.id || e.heldBy) {
+          this.notice(p.id, 'Puoi spostare solo i tuoi oggetti liberi.', 'error');
+          break;
+        }
+        this.freeze(e.id, false);
+        p.holding = e.id;
+        e.heldBy = p.id;
+        r.grabDistance = clamp(hit.t, 2, 8);
+        this.notice(p.id, 'Oggetto afferrato. Cammina per spostarlo, poi premi Posa.', 'success');
+        break;
+      }
+      case 'place-near': {
+        if (p.holding) {
+          const e = this.entities.get(p.holding);
+          if (e?.owner === p.id) this.freeze(e.id, true);
+          this.release(p);
+          this.notice(p.id, 'Oggetto posato e fissato.', 'success');
+        }
+        break;
+      }
+      case 'collect-near': {
+        const hit = this.trace(eyes(p), direction(p.yaw, p.pitch), INTERACT_RANGE, p.id);
+        if (hit.kind !== 'entity') {
+          this.notice(p.id, 'Guarda un oggetto vicino da mettere nello zaino.', 'error');
+          break;
+        }
+        const item = this.entities.get(hit.id!);
+        if (item && item.owner === p.id && item.frozen && PROPS.some((v) => v.id === item.kind)) this.freeze(item.id, false);
+        this.storePocket(p,hit.id!);
+        break;
+      }
       case 'avatar':
         if (isAvatarStyle(target) && isAvatarOutfit(msg.value)) {
           p.avatarStyle = target;

@@ -14,6 +14,7 @@ import { guestDisplayName } from './guest-entry.ts';
 import './city-drawer.css';
 import { installCityDrawer } from './city-drawer.ts';
 import { installAvatarPicker, readLook } from './avatar-picker.ts';
+import { installItalianUI } from './italian.ts';
 import { City } from './world.ts';
 import {
   disposeObject,
@@ -45,6 +46,7 @@ import type {
 } from '../shared/types.ts';
 
 const ui = new UI();
+installItalianUI(ui.root);
 const audio = new GameAudio();
 const voice = new ProximityVoice();
 voice.onChange = (status) => ui.updateVoice(status);
@@ -134,7 +136,7 @@ directory.innerHTML = `<b>✦ NEGOZI DELLA CITTÀ</b>
 <a href="https://activefloow-prog.github.io/sitolume-studio/" target="_blank" rel="noopener noreferrer">▣ SitoLume Studio ↗</a>
 <a href="https://payhip.com/nicostudioai" target="_blank" rel="noopener noreferrer">◈ Nico Lab ↗</a>`;
 document.body.append(directory);
-const cityDrawer = installCityDrawer(menu => ui.open(menu));
+const cityDrawer = installCityDrawer(menu => ui.open(menu),name => action(name));
 installAvatarPicker(look => {
   if (me && ui.playing) action('avatar',look.style,look.outfit);
 });
@@ -633,6 +635,11 @@ document.addEventListener('keydown', (event) => {
     toggleCamera();
     return;
   }
+  if (event.code === 'KeyG') {
+    event.preventDefault();
+    action(me.holding ? 'place-near' : 'grab-near');
+    return;
+  }
   if (event.code === 'KeyY' || event.code === 'Enter') {
     event.preventDefault();
     ui.openChat();
@@ -652,6 +659,11 @@ document.addEventListener('keydown', (event) => {
   if (/^Digit[1-9]$/.test(event.code)) {
     const w = me.weapons[Number(event.code.slice(-1)) - 1];
     if (w) action('equip', w);
+  }
+  if (event.code === 'KeyP') {
+    event.preventDefault();
+    action('collect-near');
+    return;
   }
   if (event.code === 'KeyE') {
     const t = aim();
@@ -690,6 +702,7 @@ renderer.domElement.addEventListener('click', () => {
 });
 document.addEventListener('mousedown', (event) => {
   if (!controlsActive() || ui.menu || ui.chatOpen || !me) return;
+  if ((event.target as HTMLElement).closest('button, aside, input, a, select, [role="dialog"]')) return;
   if (fallbackActive && event.button === 2) {
     fallbackDrag = true;
     return;
@@ -783,7 +796,7 @@ function frame(now: number): void {
     const moving =
       controlsActive() &&
       !ui.menu &&
-      (keys.has('KeyW') || keys.has('KeyS') || keys.has('KeyA') || keys.has('KeyD')) &&
+      (keys.has('KeyW') || keys.has('KeyS') || keys.has('KeyA') || keys.has('KeyD') || keys.has('ArrowUp') || keys.has('ArrowDown')) &&
       predicted.grounded;
     stepTimer += dt;
     if (moving && stepTimer > (keys.has('ShiftLeft') ? 0.29 : 0.43)) {
