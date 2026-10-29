@@ -1,4 +1,5 @@
 import { randomToken } from './security.ts';
+import { isAvatarStyle, isAvatarOutfit } from '../shared/avatar.ts';
 import * as CANNON from 'cannon-es';
 import { createHash } from 'node:crypto';
 import {
@@ -232,7 +233,7 @@ export class Game {
     this.physics.addBody(body);
     return body;
   }
-  join(name: unknown, token?: unknown): { player: Player; token: string; returning: boolean } {
+  join(name: unknown, token?: unknown, appearance?: { avatarStyle?: unknown; avatarOutfit?: unknown }): { player: Player; token: string; returning: boolean } {
     const validToken = typeof token === 'string' && /^[a-f0-9]{64}$/.test(token) ? token : '';
     const saved = validToken ? this.profiles.get(hash(validToken)) : undefined;
     if (saved && this.players.has(saved.id))
@@ -296,6 +297,9 @@ export class Game {
         this.notice(player.id, 'Your previous job is full. You returned as a Citizen with your inventory.');
       }
     }
+    // Whitelisted cosmetic preferences are owned by the same server-side player identity.
+    if (isAvatarStyle(appearance?.avatarStyle)) player.avatarStyle = appearance.avatarStyle;
+    if (isAvatarOutfit(appearance?.avatarOutfit)) player.avatarOutfit = appearance.avatarOutfit;
     if (POLICE.includes(player.job) && !player.arrestedUntil && !player.weapons.includes('scanner'))
       player.weapons.push('scanner');
     this.players.set(player.id, player);
@@ -548,6 +552,14 @@ export class Game {
       return;
     }
     switch (msg.action) {
+      case 'avatar':
+        if (isAvatarStyle(target) && isAvatarOutfit(msg.value)) {
+          p.avatarStyle = target;
+          p.avatarOutfit = msg.value;
+          this.saveProfile(p);
+          this.notice(p.id, 'Aspetto aggiornato e salvato.', 'success');
+        }
+        break;
       case 'contract-request':
       case 'contract-accept':
       case 'contract-cancel':

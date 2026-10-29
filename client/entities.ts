@@ -209,6 +209,7 @@ export interface Avatar {
   rightArm: THREE.Group;
   label: THREE.Sprite;
   job: string;
+  appearanceKey: string;
   phase: number;
   speed: number;
   crouch: number;
@@ -277,6 +278,10 @@ export function makeAvatar(player: Player): Avatar {
   const medic = player.job === 'medic',
     cook = player.job === 'cook';
   const appearance = [...player.id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 0);
+  const style = player.avatarStyle ?? 'free';
+  const outfit = player.avatarOutfit ?? 'sage';
+  const casual = !police && !suit && !hitman && !medic && !cook;
+  const outfitColor = { sage: '#739b7c', sand: '#d2a779', rose: '#bb788b' }[outfit];
   const skin = ['#c5a182', '#9c735a', '#d4b093', '#795440'][appearance % 4];
   const hair = ['#342d29', '#564132', '#82705a', '#292d2c'][(appearance >>> 3) % 4];
   const shirt = hitman
@@ -289,7 +294,7 @@ export function makeAvatar(player: Player): Avatar {
           ? '#b9c8bd'
           : cook
             ? '#ddd6c1'
-            : color;
+            : casual ? outfitColor : color;
   const trousers = hitman
     ? '#30343c'
     : police
@@ -301,6 +306,8 @@ export function makeAvatar(player: Player): Avatar {
           : '#4b5149';
   const chest = cylinder(root, 0, 1.11, 0, 0.235, 0.18, 0.49, shirt);
   chest.scale.z = 0.72;
+  if (style === 'woman' && casual) chest.scale.x = 0.87;
+  if (style === 'man' && casual) chest.scale.x = 1.1;
   sphere(root, 0, 1.32, 0, 0.23, shirt, [1.07, 0.42, 0.68]);
   const belt = cylinder(root, 0, 0.87, 0, 0.185, 0.19, 0.06, '#303735');
   belt.scale.z = 0.78;
@@ -331,6 +338,16 @@ export function makeAvatar(player: Player): Avatar {
   scalp.position.set(0, 0.157, 0.006);
   scalp.scale.set(0.98, 1.12, 0.98);
   head.add(scalp);
+  if (style === 'woman') {
+    // Longer hairstyle, kept attached to the existing animated head.
+    for (const side of [-1, 1]) {
+      const hairLock = sphere(head, side * 0.113, -0.036, 0.028, 0.085, hair, [0.8, 2.6, 0.8]);
+      hairLock.rotation.z = side * 0.12;
+    }
+  }
+  if (style === 'free') {
+    box(head, 0, 0.314, 0, 0.28, 0.045, 0.26, '#bda57b');
+  }
   if (!police && !cook && !['hobo', 'thief'].includes(player.job)) {
     const fringe = sphere(head, -0.036, 0.262, -0.081, 0.072, hair, [1.3, 0.37, 0.68]);
     fringe.rotation.z = -0.22;
@@ -476,6 +493,7 @@ export function makeAvatar(player: Player): Avatar {
     rightFoot: rightLeg.foot,
     label,
     job: player.job,
+    appearanceKey: `${player.job}:${player.avatarStyle ?? 'free'}:${player.avatarOutfit ?? 'sage'}`,
     phase: 0,
     speed: 0,
     crouch: Number(player.crouch),

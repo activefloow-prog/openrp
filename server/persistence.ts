@@ -3,6 +3,7 @@ import { EVIDENCE_CAPACITY, JOBS, MAX_ENTITIES, POCKET_CAPACITY, PROPS, WEAPONS 
 import { MAP_BOUND } from '../shared/map.ts';
 import { validContractState } from './contracts.ts';
 import { validAccount } from './accounts.ts';
+import { isAvatarStyle, isAvatarOutfit } from '../shared/avatar.ts';
 
 const object = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
@@ -50,6 +51,8 @@ function validCharacter(value: unknown): boolean {
   }
   return (
     (value.jobTitle === undefined || (text(value.jobTitle, 32) && value.jobTitle.trim().length >= 2)) &&
+    (value.avatarStyle === undefined || isAvatarStyle(value.avatarStyle)) &&
+    (value.avatarOutfit === undefined || isAvatarOutfit(value.avatarOutfit)) &&
     (value.pocket === undefined ||
       (Array.isArray(value.pocket) &&
         value.pocket.length <= POCKET_CAPACITY &&
@@ -84,6 +87,8 @@ function validCharacter(value: unknown): boolean {
         'crouch',
         'job',
         'jobTitle',
+        'avatarStyle',
+        'avatarOutfit',
         'weapons',
         'weapon',
         'ammo',

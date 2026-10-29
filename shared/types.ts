@@ -9,6 +9,8 @@ export interface HitContract {
 }
 import type { Delta } from './replication.ts';
 export type Vec3 = { x: number; y: number; z: number };
+export type AvatarStyle = 'woman' | 'man' | 'free';
+export type AvatarOutfit = 'sage' | 'sand' | 'rose';
 export type Quat = { x: number; y: number; z: number; w: number };
 export type JobId =
   | 'citizen'
@@ -60,6 +62,8 @@ export interface Player extends Motion {
   name: string;
   job: JobId;
   jobTitle?: string;
+  avatarStyle?: AvatarStyle;
+  avatarOutfit?: AvatarOutfit;
   yaw: number;
   pitch: number;
   crouch: boolean;
@@ -192,7 +196,7 @@ export type GameEvent =
   | { type: 'sound'; sound: 'cash' | 'door' | 'arrest' | 'heal' | 'break'; position: Vec3 }
   | { type: 'progress'; label: string; end: number };
 export type ClientMessage =
-  | { type: 'join'; name: string; token?: string; password?: string; account?: boolean }
+  | { type: 'join'; name: string; token?: string; password?: string; account?: boolean; avatarStyle?: AvatarStyle; avatarOutfit?: AvatarOutfit }
   | { type: 'input'; input: Input }
   | { type: 'chat'; text: string }
   | { type: 'action'; action: string; target?: string; value?: string | number | boolean }

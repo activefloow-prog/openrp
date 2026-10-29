@@ -341,7 +341,10 @@ export class World extends DurableObject<WorldEnv> {
         try {
           if (msg.account && !profileForToken(this.game, msg.token)?.account)
             throw new Error('Your account session expired. Sign in with your username and password.');
-          const joined = this.game.join(msg.name, msg.token);
+          const joined = this.game.join(msg.name, msg.token, {
+            avatarStyle: msg.avatarStyle,
+            avatarOutfit: msg.avatarOutfit,
+          });
           if (this.moderation.banned(joined.player.id)) {
             this.game.disconnect(joined.player.id);
             throw new Error('This identity is banned from the server.');

@@ -11,6 +11,9 @@ import './follow-camera.css';
 import './sitolume-directory.css';
 import './guest-entry.css';
 import { guestDisplayName } from './guest-entry.ts';
+import './city-drawer.css';
+import { installCityDrawer } from './city-drawer.ts';
+import { installAvatarPicker, readLook } from './avatar-picker.ts';
 import { City } from './world.ts';
 import {
   disposeObject,
@@ -131,6 +134,10 @@ directory.innerHTML = `<b>✦ NEGOZI DELLA CITTÀ</b>
 <a href="https://activefloow-prog.github.io/sitolume-studio/" target="_blank" rel="noopener noreferrer">▣ SitoLume Studio ↗</a>
 <a href="https://payhip.com/nicostudioai" target="_blank" rel="noopener noreferrer">◈ Nico Lab ↗</a>`;
 document.body.append(directory);
+const cityDrawer = installCityDrawer(menu => ui.open(menu));
+installAvatarPicker(look => {
+  if (me && ui.playing) action('avatar',look.style,look.outfit);
+});
 const beamGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
 const beam = new THREE.Line(
   beamGeo,
@@ -291,6 +298,8 @@ ui.onConnect = (name, password, account = false) => {
       name,
       password,
       account,
+      avatarStyle: readLook().style,
+      avatarOutfit: readLook().outfit,
       token: localStorage.getItem(account ? 'openrp-account-token' : 'openrp-token') ?? undefined,
     }),
   );
@@ -321,6 +330,7 @@ ui.onConnect = (name, password, account = false) => {
       ui.setAccountBusy(false);
       ui.serverName = msg.serverName;
       ui.connected();
+      cityDrawer.panel.hidden = false;
       connectedAt = performance.now();
       yaw = pitch = 0;
       // Enter directly into the city. Keyboard controls work without pointer-lock permission.
@@ -368,6 +378,8 @@ ui.onConnect = (name, password, account = false) => {
     if (socket !== ws) return;
     releaseControls();
     voice.disconnect();
+    cityDrawer.panel.hidden = true;
+    cityDrawer.show(false);
     ui.disconnected(
       rejection ||
         (event.code === 1008
@@ -424,7 +436,7 @@ function receiveState(snapshot: Snapshot): void {
   }
   state = snapshot;
   me = p;
-  if (!localAvatar || localAvatar.job !== p.job) {
+  if (!localAvatar || localAvatar.appearanceKey !== `${p.job}:${p.avatarStyle ?? 'free'}:${p.avatarOutfit ?? 'sage'}`) {
     if (localAvatar) disposeObject(localAvatar.root);
     localAvatar = makeAvatar(p);
     localAvatar.root.position.set(p.x, p.y, p.z);
@@ -478,7 +490,7 @@ function receiveState(snapshot: Snapshot): void {
   for (const other of snapshot.players) {
     if (other.id === myId) continue;
     let a = avatars.get(other.id);
-    if (!a || a.job !== other.job) {
+    if (!a || a.appearanceKey !== `${other.job}:${other.avatarStyle ?? 'free'}:${other.avatarOutfit ?? 'sage'}`) {
       if (a) disposeObject(a.root);
       a = makeAvatar(other);
       a.root.position.set(other.x, other.y, other.z);
@@ -807,7 +819,7 @@ function frame(now: number): void {
       camera.rotation.set(pitch, yaw, 0, 'YXZ');
     }
     cameraModeButton.hidden = false;
-    directory.hidden = false;
+    directory.hidden = true;
     for (const e of state.entities) {
       const visual = entityVisuals.get(e.id);
       if (visual) {

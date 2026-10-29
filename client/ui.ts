@@ -17,6 +17,7 @@ import { distance, eyes } from '../shared/movement.ts';
 import type { GameEvent, JobId, Player, Snapshot } from '../shared/types.ts';
 import type { VoiceStatus } from './voice.ts';
 import { guideHtml } from './guide.ts';
+import { avatarPickerHtml } from './avatar-picker.ts';
 
 export const escape = (text: unknown): string =>
   String(text ?? '').replace(
@@ -110,6 +111,7 @@ export class UI {
         <header class="entry-header"><div class="brandmark">R<span>●</span></div><div class="entry-edition">OPEN SOURCE<br><b>CITY ROLEPLAY</b></div><div class="version">ALPHA ${VERSION}</div></header>
         <div class="entry-panel"><div class="eyebrow"><span class="status-dot"></span> SITOLUME CITY / TEST MULTIPLAYER</div><h1>SITO<span>LUME</span><span class="title-period">.</span></h1><p class="entry-tagline">Una città. Persone, negozi e nuove idee.</p><p class="entry-free">PROTOTIPO GRATUITO · NESSUN PAGAMENTO ATTIVO</p>
           <div class="entry-rule"></div>
+          ${avatarPickerHtml()}
           <div id="quick-entry-area">
             <button id="quick-entry" class="primary join-button" type="button" data-action="quick-entry"><span>ENTRA SUBITO · SENZA ACCOUNT</span><span>↗</span></button>
             <p class="entry-guest-info">Un clic per entrare direttamente in città. Il tuo personaggio ospite viene creato automaticamente e si ritrova sullo stesso browser.</p>
